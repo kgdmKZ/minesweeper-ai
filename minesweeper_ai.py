@@ -15,36 +15,45 @@ from random import randint
 class MinesweeperAI(object):
     def __init__(self):
         self.game = Minesweeper(True, rows=0, cols=0, mines=0)
-        self.augmentedBoard = None
-        self.moves = 0
+    
+    # Resets instance variables to run a new Minesweeper game
+    def nextGame(self, rows, cols, mines):
+        self.game.reset(rows, cols, mines)
 
-    # Examines the game board in the Minesweeper instance and changes the
-    # augmented board in response
+    # Examines the game board in the Minesweeper instance and updates the
+    # data stored in this MinesweeperAI instance after a game move
     def analyzeBoard(self):
-        self.augmentedBoard = self.game.board
-
-    # Uses a newly-modified augmented board to determine the next game move
+        # nothing to update
+        pass
+    
+    # Determines the next game move and carries it out in the Minesweeper
+    # instance
     def makeMove(self):
-        choseValidReveal = False
-        while not choseValidReveal:
+        while 1:
             row = randint(0, self.game.rows-1)
-            col = randint(0, self.game.cols-1)
-            if self.augmentedBoard[row][col] == '?':
+            col = randint(0, self.game.cols-1)    
+            
+            if self.game.board[row][col] == '?':
                 self.game.revealSquare(row, col)
-                choseValidReveal = True
 
+                break
+    
     # Play one game with the specified numbers of rows, columns, and mines
     def playGame(self, rows, cols, mines):
         # reset the game with input configuration
-        self.game.reset(rows, cols, mines)
+        self.nextGame(rows, cols, mines)
+        
         moves = 0
         start = time.time()
-
-        while self.game.inProgress:
-            self.analyzeBoard()
+        
+        while 1:
             self.makeMove()
             moves += 1
-
+            if self.game.inProgress:
+                self.analyzeBoard()
+            else:
+                break
+        
         end = time.time()
         duration = end-start
 
@@ -64,9 +73,9 @@ class MinesweeperAI(object):
         mines = randint(1, rows*cols-1)
 
         return rows, cols, mines
-
-    # Play n games where game parameters are either random or
-    # fixed at the same rows, cols, mines values for each game
+    
+    # Plays n games where game parameters are either random each time or fixed 
+    # at the same rows, cols, mines values as given
     def playGames(self, n, randomly=True, **fixedConfig):
         wins = 0
         moves = 0
@@ -102,3 +111,29 @@ class MinesweeperAI(object):
         print("Win Percentage: %f" % ((float(wins)/n)*100))
         print("Total time: %f seconds" % duration)
         print("Total moves: %d\n" % moves)
+    
+    # Takes a tuple containing the row and column numbers of a square in the
+    # game board and returns the string stored in the board, or None if the 
+    # row and/or col numbers are out of bounds
+    def safeGet(self, rowCol):
+        rows = self.game.rows
+        cols = self.game.cols
+
+        row = rowCol[0]
+        col = rowCol[1]
+
+        if row < 0 or row >= rows or col < 0 or col >= cols:
+            return None 
+        
+        return self.game.board[row][col]
+
+    # A helper function to get a set of surrounding squares in the game board
+    # given the row and column of a square. The set contains tuples where the 
+    # first value is a tuple of row and column numbers and the second is the 
+    # string stored in the board
+    def getSurroundingSquares(self, row, col):
+        adjacentRowCols = [(row-1,col-1),(row-1,col),(row-1,col+1),
+          (row,col-1), (row, col+1), (row+1,col-1),(row+1,col),(row+1,col+1)]
+        adjacentSquares = [(rowCol, self.safeGet(rowCol)) for rowCol in adjacentRowCols]
+        return set([sq for sq in adjacentSquares if sq[1] is not None])
+

@@ -12,8 +12,11 @@ from minesweeper_messages import MinesweeperMessages as msg
 import sys
 
 class Minesweeper(object):
+    defaultGameConfig = (16, 16, 40)
+
     def printBoard(self):
         charCols = 4*self.cols
+
         colNumberRow = '  ' + '   '.join(str(i+1) for i in
           range(min(9, self.cols))) + '   ' + '  '.join(str(j+1) for j
           in range(9, self.cols))
@@ -60,7 +63,7 @@ class Minesweeper(object):
 
     def getValidSelection(self):
         while 1:
-            rowCol = raw_input(msg.revealMsg)
+            rowCol = input(msg.revealMsg)
             rowCol = rowCol.split()
 
             if len(rowCol) != 2:
@@ -105,18 +108,17 @@ class Minesweeper(object):
         return (rowCol for rowCol in adjacent if self.safeGet(rowCol) == '?')
 
     def getGameConfig(self):
+        (rows, cols, mines) = (None, None, None)
+
         while 1:
-            use_default = raw_input(msg.gameStartMsg)
+            use_default = input(msg.gameStartMsg)
 
             if use_default.upper() == 'Y':
-                rows = 16
-                cols = 16
-                mines = 40
-                return rows, cols, mines
+                return ()
 
             if use_default.upper() == 'N':
                 while 1:
-                    rows = raw_input(msg.rowMsg)
+                    rows = input(msg.rowMsg)
 
                     try:
                         rows = int(rows)
@@ -130,7 +132,8 @@ class Minesweeper(object):
                         break
 
                 while 1:
-                    cols = raw_input(msg.colMsg)
+
+                    cols = input(msg.colMsg)
 
                     try:
                         cols = int(cols)
@@ -140,11 +143,14 @@ class Minesweeper(object):
 
                     if cols < 1:
                         print(msg.colNone)
+                    elif rows == 1 and cols == 1:
+                        print(msg.colMakesBoardOneByOne)
                     else:
                         break
 
                 while 1:
-                    mines = raw_input(msg.mineMsg)
+
+                    mines = input(msg.mineMsg)
 
                     try:
                         mines = int(mines)
@@ -153,33 +159,36 @@ class Minesweeper(object):
 
                     if mines < 1:
                         print(msg.mineNone)
-                    elif mines >= self.rows*self.cols:
+                    elif mines >= rows*cols:
                         print(msg.mineTooMany)
                     else:
                         return rows, cols, mines
 
+    def validGameConfig(self, game_config=()):
+        return (len(game_config) == 3 and all(game_config) and
+            game_config[2] < game_config[0]*game_config[1])
 
-    def reset(self, rows, cols, mines):
+    def reset(self, game_config=()):
         self.inProgress = True
         self.seen = 0
 
-        self.rows = rows
-        self.cols = cols
-        self.mines = mines
+        if self.validGameConfig(game_config):
+            (self.rows, self.cols, self.mines) = game_config
+        elif not (self.rows and self.cols and self.mines):
+            (self.rows, self.cols, self.mines) = self.defaultGameConfig
 
         self.board = [['?'] * self.cols for i in range(self.rows)]
 
         self.placeMines()
 
-    def __init__(self, manual=False, **config):
+    def __init__(self, manual=False, game_config=()):
+        (self.rows, self.cols) = (None, None)
+
         if manual:
-            rows = config.get('rows')
-            cols = config.get('cols')
-            mines = config.get('mines')
-            self.reset(rows, cols, mines)
+            self.reset(game_config)
         else:
-            rows, cols, mines = self.getGameConfig()
-            self.reset(rows, cols, mines)
+            game_config = self.getGameConfig()
+            self.reset(game_config)
             self.printBoard()
             self.startGame()
 

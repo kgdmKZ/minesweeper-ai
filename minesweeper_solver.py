@@ -1,18 +1,35 @@
+# Author: Andrew Zadravec
+#
+# A simple Minesweeper Solver
+
 from minesweeper_ai import MinesweeperAI
 from random import randint
 
 class MinesweeperSolver(MinesweeperAI):
-    def __init__(self):
-        super(MinesweeperSolver, self).__init__()
-        
-        # contain (row, col) for each known mine and each known safe '?' square
-        self.mines = set()
-        self.safeUnrevealed = set() 
+    def __init__(self, game_config=()):
+        super(MinesweeperSolver, self).__init__(game_config)
+        self.resetSolverState()
 
-        # row and column of most recent game move
-        self.row = None
-        self.col = None
-    
+    def resetSolverState(self):
+        # set of 2-element tuples for the rows and columns of squares on the
+        # board that have not been revealed but that are known not to have a
+        # mine because it can be inferred from the current board state
+        self.safeUnrevealed = set()
+
+        # set of 2-element tuples for the rows and columns of each square on
+        # the board that is known to have a mine
+        self.mines = set()
+
+        # row and column of the most recent move that was made
+        (self.row, self.col) = (None, None)
+
+    # When starting a new game, reset the variables tracking where the mines and
+    # guaranteed safe spaces on the board are, as well as the most recent game
+    # move row and col. Also reset the board for the game itself.
+    def nextGame(self, game_config=()):
+        self.resetSolverState()
+        super(MinesweeperSolver, self).nextGame(game_config)
+
     # use MinesweeperAI safeGet() method but change some values from the board
     # in cases where mines or safeUnrevealed contain them
     def safeGet(self, rowCol):
@@ -23,35 +40,41 @@ class MinesweeperSolver(MinesweeperAI):
 
         return super(MinesweeperSolver, self).safeGet(rowCol)
 
-    # Identifies mines in the game board that are next to newly-revealed '1'
-    # squares in cases where all other squares surrounding those ones are 
-    # revealed
-    def markByOnes(self):
-        squareVal = self.safeGet((self.row, self.col))
-        squaresRevealed = set([((self.row, self.col), squareVal)])
-        seen = set()
+    # Look at squares surrounding numbered squares to determine
+    # by elimination whether the unknown squares must be mines
+    # or safe spaces that are guaranteed not to have mines
+    def markSafeAndMines(self):
+        numberedSquares = [
+            (i, j)
+            for i in range(self.game.rows)
+            for j in range(self.game.cols)
+            if self.safeGet((i, j)).isdigit()
+        ]
 
-        while len(squaresRevealed) > 0:
-            curSquare = squaresRevealed.pop()
-            row, col = curSquare[0][0], curSquare[0][1]
-            squareVal = curSquare[1]
-
-            surrounding = self.getSurroundingSquares(row, col)
-            
-            if squareVal == '1':
-                unknowns = [sq for sq in surrounding if sq[1] == '?']
-                if len(unknowns) == 1:
-                    rowColMine = unknowns[0][0]
-                    self.mines.add(rowColMine)
-            elif squareVal == ' ':
-                surrounding = [sq for sq in surrounding if \
-                  sq[1] in (' ', '1') and sq[0] not in seen]
-                squaresRevealed.update(surrounding)
-
-            seen.add(curSquare[0])
+        for (i, j) in numberedSquares:
+            number = int(self.safeGet((i, j)))
+            surrounding = self.getSurroundingSquares(i, j)
+            unknowns = [sq[0] for sq in surrounding if sq[1] == '?']
+            mines = [sq[0] for sq in surrounding if sq[1] == '*']
+            numRemainingMines = number - len(mines)
+            # the unknown squares must be the missing mines
+            if len(unknowns) == numRemainingMines:
+                self.mines.update(unknowns)
+                for unknown in unknowns:
+                    print('New mine at ' + str(unknown[0]) +', ' + str(unknown[1]))
+            # all the surrounding mine locations are known, so the unknown squares are safe
+            elif number == len(mines):
+                self.safeUnrevealed.update(unknowns)
+                for unknown in unknowns:
+                    print('New safe at ' + str(unknown[0]) +', ' + str(unknown[1]))
     
     def analyzeBoard(self):
-        self.markByOnes()
+        # remove any squares revealed by the last move from safeUnrevealed
+        self.safeUnrevealed.difference_update({
+            (i, j) for (i, j) in self.safeUnrevealed
+                if super(MinesweeperSolver, self).safeGet((i,j)) != '?'
+        })
+        self.markSafeAndMines()
 
     def makeMove(self):
         if len(self.safeUnrevealed) > 0:
@@ -59,15 +82,6 @@ class MinesweeperSolver(MinesweeperAI):
             self.game.revealSquare(safeMove[0], safeMove[1])
             self.row, self.col = safeMove
         else:
-            while 1:
-                row = randint(0, self.game.rows-1)
-                col = randint(0, self.game.cols-1)    
-                
-                if self.game.board[row][col] == '?' and \
-                  (row, col) not in self.mines:
-                    self.game.revealSquare(row, col)
-                    self.row, self.col = row, col
-                    break    
+            self.row, self.col = super(MinesweeperSolver, self).makeMove()
 
-
-            
+        return self.row, self.col

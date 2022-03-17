@@ -15,6 +15,48 @@ class MinesweeperAI(object):
     def __init__(self, game_config=()):
         self.game = Minesweeper(True, game_config)
 
+    @staticmethod
+    def isMine(row, col, value):
+        return value == '*'
+    @staticmethod
+    def isUnknown(row, col, value):
+        return value == '?'
+    @staticmethod
+    def isNum(row, col, value):
+        return value.isdigit()
+    @staticmethod
+    def isSafe(row, col, value):
+        return v in (' ', 'S')
+    @staticmethod
+    def justPosition(row, col, value):
+        return (row, col)
+    @staticmethod
+    def distance(sq1, sq2):
+        return max(abs(sq1[0]-sq2[0]), abs(sq1[1]-sq2[1]))
+    @staticmethod
+    def asIs(x):
+        return x
+    @staticmethod
+    def asSet(x):
+        return {*x}
+    @staticmethod
+    def asCount(generator):
+        return sum(1 for elt in generator)
+    @staticmethod
+    def seenFn(seen):
+        return (lambda r, c, v: (r, c) in seen)
+    @staticmethod
+    def notCondFn(condFn):
+        return (lambda *rcv: not condFn(*rcv))
+    @staticmethod
+    def composeCond(condFn1, condFn2):
+        return (lambda *rcv: condFn1(*rcv) and condFn2(*rcv))
+
+
+    # Override this to change how the board is printed after each move
+    def printBoard(self):
+        self.game.printBoard()
+
     # Resets instance variables to run a new Minesweeper game
     def nextGame(self, game_config=()):
         self.game.reset(game_config)
@@ -33,8 +75,7 @@ class MinesweeperAI(object):
             col = randint(0, self.game.cols-1)
 
             if self.game.board[row][col] == '?':
-                self.game.revealSquare(row, col)
-
+                self.game.revealSquare(row, col, False)
                 return row, col
 
     # Play one game with the specified numbers of rows, columns, and mines
@@ -45,11 +86,14 @@ class MinesweeperAI(object):
         moves = 0
         start = time.time()
 
+        self.printBoard()
+
         while 1:
             self.makeMove()
             moves += 1
             if self.game.inProgress:
                 self.analyzeBoard()
+                self.printBoard()
             else:
                 break
 
@@ -115,25 +159,23 @@ class MinesweeperAI(object):
     # Takes a tuple containing the row and column numbers of a square in the
     # game board and returns the string stored in the board, or None if the
     # row and/or col numbers are out of bounds
-    def safeGet(self, rowCol):
-        rows = self.game.rows
-        cols = self.game.cols
-
-        row = rowCol[0]
-        col = rowCol[1]
-
-        if row < 0 or row >= rows or col < 0 or col >= cols:
-            return None
-
-        return self.game.board[row][col]
+    def safeGet(self, row, col):
+        return self.game.safeGet((row, col))
 
     # A helper function to get a set of surrounding squares in the game board
     # given the row and column of a square. The set contains tuples where the
     # first value is a tuple of row and column numbers and the second is the
     # string stored in the board
-    def getSurroundingSquares(self, row, col):
-        adjacentRowCols = [(row-1,col-1),(row-1,col),(row-1,col+1),
-          (row,col-1), (row, col+1), (row+1,col-1),(row+1,col),(row+1,col+1)]
-        adjacentSquares = [(rowCol, self.safeGet(rowCol)) for rowCol in adjacentRowCols]
-        return set([sq for sq in adjacentSquares if sq[1] is not None])
-
+    def getSurroundingSquares(self, row, col,
+        conditionFn=(lambda r, c, v: 1),
+        transformSqFn=(lambda r, c, v: (r, c, v)),
+        transformGenFn=(lambda generator: [*generator])
+    ):
+        return transformGenFn(
+            transformSqFn(i, j, self.safeGet(i, j))
+                for i in range(row-1, row+2)
+                for j in range(col-1, col+2)
+                if self.safeGet(i, j) is not None
+                    and not (i == row and j == col)
+                    and conditionFn(i, j, self.safeGet(i, j))
+        )

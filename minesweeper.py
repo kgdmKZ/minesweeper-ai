@@ -179,7 +179,7 @@ class Minesweeper(object):
 
         self.board = [['?'] * self.cols for i in range(self.rows)]
 
-        self.placeMines()
+        self.mineLocations = set()
 
     def __init__(self, manual=False, game_config=()):
         (self.rows, self.cols) = (None, None)
@@ -192,19 +192,20 @@ class Minesweeper(object):
             self.printBoard()
             self.startGame()
 
-    def placeMines(self):
-        self.mineLocations = set()
-
+    def placeMines(self, exclude=None):
         for i in range(self.mines):
-            minePlaced = False
+            while 1:
+                mineLocation = (
+                    randint(0, self.rows-1),
+                    randint(0, self.cols-1)
+                )
 
-            while not minePlaced:
-                mineRow = randint(0, self.rows-1)
-                mineCol = randint(0, self.cols-1)
-
-                if (mineRow, mineCol) not in self.mineLocations:
-                    self.mineLocations.add((mineRow, mineCol))
-                    minePlaced = True
+                if (
+                    exclude != mineLocation
+                    and mineLocation not in self.mineLocations
+                ):
+                    self.mineLocations.add(mineLocation)
+                    break
 
     def isWon(self):
         nonMineSquareCount = self.rows*self.cols-self.mines
@@ -212,12 +213,15 @@ class Minesweeper(object):
             return True
         return False
 
-    def revealSquare(self, row, col):
+    def revealSquare(self, row, col, printAfterReveal=True):
         print("\nRevealed square at (%d, %d)" % (row+1, col+1))
 
         square = self.board[row][col]
 
-        if (row, col) in self.mineLocations:
+        if not self.mineLocations:
+            # guarantee that the first selected square is not a mine
+            self.placeMines(exclude=(row, col))
+        elif (row, col) in self.mineLocations:
             self.revealMinesInBoard()
             print(msg.lost)
             return
@@ -243,7 +247,7 @@ class Minesweeper(object):
         if self.isWon():
             self.revealMinesInBoard()
             print(msg.won)
-        else:
+        elif printAfterReveal:
             self.printBoard()
 
     def startGame(self):

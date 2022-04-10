@@ -2,9 +2,9 @@
 #
 # This class contains methods to run Minesweeper games and print time and move
 # count statistics for an algorithm that selects game moves and is implemented
-# via analyzeBoard() and makeMove(). By default, a MinesweeperAI instance will
+# via analyzeBoard() and determineMove(). By default, a MinesweeperAI instance will
 # play a game by repeatedly selecting a random move, but subclasses should
-# implement more clever versions of analyzeBoard() and makeMove().
+# implement more clever versions of analyzeBoard() and determineMove().
 #
 
 from minesweeper import Minesweeper
@@ -85,16 +85,14 @@ class MinesweeperAI(object):
         # game to update by overriding this method)
         pass
 
-    # Determines the next game move and carries it out in the Minesweeper
-    # instance
-    def makeMove(self):
+    # Determines the next game move to make and returns a row, col tuple
+    def determineMove(self):
         while 1:
             row = randint(0, self.game.rows-1)
             col = randint(0, self.game.cols-1)
 
             if self.game.board[row][col] == '?':
-                self.game.revealSquare(row, col, False)
-                return row, col
+                return (row, col)
 
     # Play one game with the specified numbers of rows, columns, and mines
     def playGame(self, game_config=()):
@@ -107,7 +105,9 @@ class MinesweeperAI(object):
         self.printBoard()
 
         while 1:
-            self.makeMove()
+            move = self.determineMove()
+            self.game.revealSquare(*move, False)
+
             moves += 1
             if self.game.inProgress:
                 self.analyzeBoard()

@@ -856,7 +856,7 @@ class MinesweeperSolver(MinesweeperAI):
     # Otherwise, decide between selecting a frontier square known to be the least likely
     # frontier square to have a mine or selecting a random non-frontier square based on whether that
     # is estimated to have a lower probability of being a mine.
-    def makeMove(self):
+    def determineMove(self):
         if self.safeUnrevealed:
             move = self.safeUnrevealed.pop()
             print("Move strategy: select an unrevealed square that is known to be safe")
@@ -896,8 +896,8 @@ class MinesweeperSolver(MinesweeperAI):
                 moveIndex = randint(0, len(unknownsOnBoard)-1)
                 move = unknownsOnBoard[moveIndex]
 
-        self.game.revealSquare(*move, False)
         (self.row, self.col) = move
+        return move
 
     # Print both the game board and a special internal version of the board that includes extra
     # information (namely the solver's marked mine and unrevealed safe square locations).

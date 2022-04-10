@@ -164,7 +164,8 @@ class Minesweeper(object):
                     else:
                         return rows, cols, mines
 
-    def validGameConfig(self, game_config=()):
+    @staticmethod
+    def validGameConfig(game_config=()):
         return (len(game_config) == 3 and all(game_config) and
             game_config[2] < game_config[0]*game_config[1])
 

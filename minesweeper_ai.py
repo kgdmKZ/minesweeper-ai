@@ -15,39 +15,55 @@ class MinesweeperAI(object):
     def __init__(self, game_config=()):
         self.game = Minesweeper(True, game_config)
 
+
+    # Small functions that may be useful as arguments to getSurroundingSquares()
+    # and for other purposes. Some of these methods follow the recommendation
+    # that full implementations of MinesweeperAI represent mines as '*'
+    # characters and known safe, unrevealed squares as 'S' internally.
     @staticmethod
     def isMine(row, col, value):
         return value == '*'
+
     @staticmethod
     def isUnknown(row, col, value):
         return value == '?'
+
     @staticmethod
     def isNum(row, col, value):
         return value.isdigit()
+
     @staticmethod
     def isSafe(row, col, value):
         return v in (' ', 'S')
+
     @staticmethod
     def justPosition(row, col, value):
         return (row, col)
+
     @staticmethod
     def distance(sq1, sq2):
         return max(abs(sq1[0]-sq2[0]), abs(sq1[1]-sq2[1]))
+
     @staticmethod
     def asIs(x):
         return x
+
     @staticmethod
     def asSet(x):
         return {*x}
+
     @staticmethod
     def asCount(generator):
         return sum(1 for elt in generator)
+
     @staticmethod
     def seenFn(seen):
         return (lambda r, c, v: (r, c) in seen)
+
     @staticmethod
     def notCondFn(condFn):
         return (lambda *rcv: not condFn(*rcv))
+
     @staticmethod
     def composeCond(condFn1, condFn2):
         return (lambda *rcv: condFn1(*rcv) and condFn2(*rcv))
@@ -64,7 +80,9 @@ class MinesweeperAI(object):
     # Examines the game board in the Minesweeper instance and updates the
     # data stored in this MinesweeperAI instance after a game move
     def analyzeBoard(self):
-        # nothing to update
+        # nothing to update (subclasses should usually have some instance
+        # variables tracking useful information about the current state of the
+        # game to update by overriding this method)
         pass
 
     # Determines the next game move and carries it out in the Minesweeper
@@ -119,6 +137,15 @@ class MinesweeperAI(object):
 
     # Plays n games where game parameters are either random each time or fixed
     # at the same rows, cols, mines values as given
+    #
+    # If provided, game_config should be a tuple of (rows, columns, mines) in
+    # the games that will be instantiated. It is ignored unless randomly is set
+    # to False (by default, this method randomly configures each game).
+    #
+    # If randomly is False and game_config is not provided, each game will use
+    # the last configured game settings over again (so callers should only
+    # create this condition when the current game instance has such settings
+    # and it is desirable to reuse them).
     def playGames(self, n, randomly=True, game_config=()):
         wins = 0
         moves = 0
@@ -165,7 +192,26 @@ class MinesweeperAI(object):
     # A helper function to get a set of surrounding squares in the game board
     # given the row and column of a square. The set contains tuples where the
     # first value is a tuple of row and column numbers and the second is the
-    # string stored in the board
+    # string stored in the board.
+    #
+    # This method is designed to facilitate a wide range of use cases:
+    #
+    # The immediately surrounding squares can be filtered based on whether each
+    # square makes conditionFn return a true value (by default it always does).
+    #
+    # conditionFn and transformSqFn both take the following arguments: row
+    # number, column number, and value at the relevant square.
+    #
+    # transformSqFn allows the caller to decide on a different value derived
+    # from a square's value and position to be returned instead of the default,
+    # which is to return a (row, column, value) tuple.
+    #
+    # transformGenFn takes the generator for all the surrounding square values
+    # (that meet conditionFn and as transformed by transformSqFn) and transforms
+    # it into some other return value. The most common use is to return
+    # something else aside from a generator, like a set, list, etc. The default
+    # function if this argument is not provided will return a list of each
+    # generated element.
     def getSurroundingSquares(self, row, col,
         conditionFn=(lambda r, c, v: 1),
         transformSqFn=(lambda r, c, v: (r, c, v)),

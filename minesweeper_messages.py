@@ -45,7 +45,7 @@ class MinesweeperMessages:
     # This makes it impossible for at least one mine to be placed while leaving at least one safe
     # square, so prompt the user to give the game board at least 2 columns.
     colMakesBoardOneByOne = "The game board must be larger than one square. Choose a larger number of columns."
-    
+
     # Prompt for user to enter the number of mines on a new game board
     mineMsg = "Enter the number of mines to place: "
 

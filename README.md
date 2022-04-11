@@ -1,5 +1,10 @@
 # minesweeper-ai
 
+A terminal based Minesweeper game implementation, a simple framework for implementing an automated solver that plays games by submitting moves to an instance of the Minesweeper game, and one implementation of such an automated solver. The included solver has a win rate of
+* ~92% for beginner difficulty games (9 rows, 9 columns, and 10 mines)
+* ~80% for intermediate difficulty games (16 rows, 16 columns, and 40 mines)
+* ~34% for expert difficulty games (30 rows, 16 columns, and 99 mines)
+
 # Playing the game
 Simply run `python minesweeper.py` and follow the prompts to configure the desired number of rows, columns, and mines in the game. You will then be prompted to input a row and column number separated by a space to indicate each desired move until the game ends. Between moves, the current state of the game board will be printed to the terminal.
 

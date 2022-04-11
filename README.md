@@ -62,7 +62,6 @@ At the very end, the solver will print overall statistics for the completed game
     probability that each unrevealed square next to at least one numbered square contains a mine,
     and determine the expected, minimum, and maximum mine total among all unrevealed squares next
     to at least one numbered square in valid partial solutions to the board for just those squares.
-
      * Check the squares surrounding each numbered square. If the number on the square combined
         with the solver's current record of squares that must be mines or must be safe means that
         the unrevealed squares with unknown status must all be mines (or must all be safe), then
@@ -74,47 +73,47 @@ At the very end, the solver will print overall statistics for the completed game
         and the number of known adjacent mine squares) is the same as the number of mines
         still unaccounted for in the entire game, then all other unknown squares on the entire
         game board must be safe.
-     * Determine the set of "frontiers" in the current game board:
-         * A frontier is a set of unknown squares where knowing one square's status as either
+     * Determine the set of "frontiers" in the current game board
+       * A frontier is a set of unknown squares where knowing one square's status as either
             being safe or a mine potentially reveals the status that other unknown squares
             in the frontier must have because of constraints created by a chain of shared
             numbered squares and their adjacent unknown squares. The numbered squares adjacent
             to unknown squares in the frontier are also considered to be in the frontier.
-         * All frontiers combined contain exactly the set of all squares on the game board
+       * All frontiers combined contain exactly the set of all squares on the game board
              that are unknown and have at least one adjacent numbered square, as well as all
              numbered squares adjacent to such squares.
-         * A single frontier is constructed as follows:
-                 * Start with an unknown square adjacent to at least one numbered square that
+       * A single frontier is constructed as follows:
+         1. Start with an unknown square adjacent to at least one numbered square that
                     is not yet grouped into a frontier. Include it and its adjacent numbered
                     squares in the frontier being constructed.
-                 * All unknown squares adjacent to the numbered squares just added are also
+         2. All unknown squares adjacent to the numbered squares just added are also
                     in the frontier, so add them.
-                 * Add each numbered square adjacent to at least one of the unknown squares
+         3. Add each numbered square adjacent to at least one of the unknown squares
                     added in step 2.
-                 * Repeat steps 2 and 3 until either step yields no new squares to add.
+         4. Repeat steps b and c until either step yields no new squares to add.
      * For each frontier, enumerate all possible partial solutions to the board that satisfy
         the mine numbers on numbered squares in the frontier
-         * "Partial solution" specifically means a unique marking of each unknown square in the
+       * "Partial solution" specifically means a unique marking of each unknown square in the
             frontier as either being a mine or safe that ensures all numbered squares have the
             correct numbers of adjacent mines. Future moves may determine that a given partial
             solution is actually not valid, but the point of creating partial solutions is to
             make an educated guess based on what can currently be derived from the board state.
-         * Assign each unknown square an estimated probability that it is a mine by checking
+       * Assign each unknown square an estimated probability that it is a mine by checking
              the number of partial solutions that set it as a mine divided by the number of
              partial solutions for its frontier.
-         * Also record the "expected" total number of mines among all frontiers (the sum of
+       * Also record the "expected" total number of mines among all frontiers (the sum of
               average mine counts in partial solutions for each frontier), the minimum number
               of mines, and the maximum.
      * Use the minimum and maximum mine counts for the combined frontiers to reason about
         possible constraints on what the unknown squares outside the frontiers must be in
         order to satisfy the game's total mine count.
-         * If the number of unknown (unmarked) mines left in the game matches the minimum
+       * If the number of unknown (unmarked) mines left in the game matches the minimum
             number of mines among the frontiers' unknowns, all non-frontier unknowns must
             be safe, so mark them as such.
-         * If the maximum number of mines among the frontiers would still leave a number
+       * If the maximum number of mines among the frontiers would still leave a number
              of mines remaining in the game that matches the number of non-frontier unknowns,
              all non-frontier unknowns must be mines.
-         * Note the expected number of mines among all unknowns in the frontiers is used in
+       * Note the expected number of mines among all unknowns in the frontiers is used in
               estimating the probability that picking a non-frontier unknown will yield a mine
               in the next move.
 

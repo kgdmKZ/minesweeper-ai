@@ -90,7 +90,6 @@ from random import randint
 from math import ceil, log
 from itertools import combinations
 from multiprocessing import cpu_count, Pool
-import sys
 
 class MinesweeperSolver(MinesweeperAI):
     def __init__(self, game_config=()):
@@ -920,22 +919,4 @@ class MinesweeperSolver(MinesweeperAI):
         print("-" * boardWidth, "\n")
 
 if __name__ == '__main__':
-    argCount = len(sys.argv)-1
-    intArgs = [int(arg) for arg in sys.argv[1:5]]
-
-    if argCount != 4:
-        print(argCount, "solver args were provided, but there must be exactly 4 in this order:")
-        print("    1. The number of games for the solver to play")
-        print("    2. The number of rows in each game")
-        print("    3. The number of columns in each game")
-        print("    4. The number of mines in each game")
-    elif intArgs[0] < 1:
-        print("The first argument must be a positive integer for the number of games to play.")
-    elif sum(1 for c in intArgs[1:4] if c < 1):
-        print("The second, third, and fourth arguments must be positive integers.")
-    elif not Minesweeper.validGameConfig((intArgs[1], intArgs[2], intArgs[3])):
-        print("Row, column, and mine configuration is invalid for the game.")
-        print("There must be at least one safe square and one mine square on the game board.")
-    else:
-        solver = MinesweeperSolver()
-        solver.playGames(intArgs[0], False, (intArgs[1:4]))
+    MinesweeperSolver.run()
